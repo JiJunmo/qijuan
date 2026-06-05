@@ -5,6 +5,7 @@ interface RouteParams {
   id?: string;
   title?: string;
   author?: string;
+  cover?: string | Resource;
   coverColor?: string;
   status?: 'unread' | 'reading' | 'read';
   summary?: string;
@@ -21,6 +22,7 @@ struct BookDetail {
   @State bookId: string = '';
   @State title: string = '未知图书';
   @State author: string = '未知作者';
+  @State cover: string | Resource = $r('app.media.cover_placeholder');
   @State coverColor: string = '#5F8575';
   @State status: 'unread' | 'reading' | 'read' = 'unread';
   @State summary: string = '';
@@ -37,6 +39,7 @@ struct BookDetail {
       this.bookId = params.id || '';
       this.title = params.title || '未知图书';
       this.author = params.author || '未知作者';
+      this.cover = params.cover || $r('app.media.cover_placeholder');
       this.coverColor = params.coverColor || '#5F8575';
       this.status = params.status || 'unread';
       this.summary = params.summary || '暂无简介。';
@@ -129,7 +132,8 @@ struct BookDetail {
           // Book Hero Cover Panel
           Column() {
             Column() {
-              Image($r('app.media.cover_placeholder'))
+              Image(this.cover)
+                .alt($r('app.media.cover_placeholder'))
                 .width('100%')
                 .height('100%')
                 .objectFit(ImageFit.Contain)

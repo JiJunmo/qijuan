@@ -7,6 +7,7 @@ import { common } from '@kit.AbilityKit';
 import { customScan, scanBarcode, scanCore } from '@kit.ScanKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { BookItem, MOCK_BOOKS } from '../model/BookData';
+import fs from '@ohos.file.fs';
 
 @Entry
 @Component
@@ -224,6 +225,59 @@ struct Index {
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
+  downloadCover(isbn: string, coverUrl: string): Promise<string | Resource> {
+    return new Promise((resolve) => {
+      if (!coverUrl || !coverUrl.startsWith('http')) {
+        resolve($r('app.media.cover_placeholder'));
+        return;
+      }
+      try {
+        let context = getContext(this) as common.UIAbilityContext;
+        let filePath = context.filesDir + '/' + isbn + '.jpg';
+        
+        // Check if file already exists
+        try {
+          if (fs.accessSync(filePath)) {
+            resolve('file://' + filePath);
+            return;
+          }
+        } catch (e) {
+          // File does not exist, proceed to download
+        }
+
+        let httpRequest = http.createHttp();
+        httpRequest.request(
+          coverUrl,
+          {
+            method: http.RequestMethod.GET,
+            expectDataType: http.HttpDataType.ARRAY_BUFFER,
+            connectTimeout: 8000,
+            readTimeout: 8000
+          },
+          (err, data) => {
+            if (!err && data.responseCode === 200) {
+              try {
+                let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNCATE);
+                fs.writeSync(file.fd, data.result as ArrayBuffer);
+                fs.closeSync(file);
+                resolve('file://' + filePath);
+                httpRequest.destroy();
+                return;
+              } catch (e) {
+                console.error('保存本地封面文件失败: ' + JSON.stringify(e));
+              }
+            }
+            resolve(coverUrl); // fallback to remote URL if download fails
+            httpRequest.destroy();
+          }
+        );
+      } catch (err) {
+        console.error('下载本地封面抛错: ' + JSON.stringify(err));
+        resolve(coverUrl);
+      }
+    });
+  }
+
   // 1. Query Custom Server (returns Promise<BookItem | null>)
   queryCustomServer(isbn: string): Promise<BookItem | null> {
     return new Promise((resolve) => {
@@ -268,21 +322,26 @@ struct Index {
           if (!err && data.responseCode === 200) {
             try {
               const resObj = JSON.parse(data.result as string) as Record<string, Object>;
-              const book = new BookItem(
-                (this.books.length + 1).toString(),
-                (resObj.title as string) || '未知书名',
-                (resObj.author as string) || '未知作者',
-                $r('app.media.cover_placeholder'),
-                this.getRandomColor(),
-                'unread',
-                (resObj.summary as string) || '暂无内容简介。',
-                (resObj.publisher as string) || '未知出版社',
-                (resObj.pubdate as string) || '--',
-                parseInt(resObj.pages as string) || (resObj.pages as number) || 0,
-                isbn,
-                '自建服务器'
-              );
-              resolve(book);
+              const remoteCover = (resObj.cover as string) || '';
+              this.downloadCover(isbn, remoteCover).then((localCover) => {
+                const book = new BookItem(
+                  (this.books.length + 1).toString(),
+                  (resObj.title as string) || '未知书名',
+                  (resObj.author as string) || '未知作者',
+                  localCover,
+                  this.getRandomColor(),
+                  'unread',
+                  (resObj.summary as string) || '暂无内容简介。',
+                  (resObj.publisher as string) || '未知出版社',
+                  (resObj.pubdate as string) || '--',
+                  parseInt(resObj.pages as string) || (resObj.pages as number) || 0,
+                  isbn,
+                  '自建服务器'
+                );
+                resolve(book);
+              }).catch(() => {
+                resolve(null);
+              });
               httpRequest.destroy();
               return;
             } catch (e) {
@@ -325,21 +384,34 @@ struct Index {
                 const publisher = volumeInfo.publisher as string || '未知出版社';
                 const publishedDate = volumeInfo.publishedDate as string || '--';
                 const pageCount = volumeInfo.pageCount as number || 0;
-                const book = new BookItem(
-                  (this.books.length + 1).toString(),
-                  title,
-                  authors.join(', '),
-                  $r('app.media.cover_placeholder'),
-                  this.getRandomColor(),
-                  'unread',
-                  desc,
-                  publisher,
-                  publishedDate,
-                  pageCount,
-                  isbn,
-                  '网络录入(Google)'
-                );
-                resolve(book);
+                
+                let remoteCover = '';
+                if (volumeInfo.imageLinks && (volumeInfo.imageLinks as Record<string, string>).thumbnail) {
+                  remoteCover = (volumeInfo.imageLinks as Record<string, string>).thumbnail;
+                  if (remoteCover.startsWith('http://')) {
+                    remoteCover = 'https://' + remoteCover.substring(7);
+                  }
+                }
+
+                this.downloadCover(isbn, remoteCover).then((localCover) => {
+                  const book = new BookItem(
+                    (this.books.length + 1).toString(),
+                    title,
+                    authors.join(', '),
+                    localCover,
+                    this.getRandomColor(),
+                    'unread',
+                    desc,
+                    publisher,
+                    publishedDate,
+                    pageCount,
+                    isbn,
+                    '网络录入(Google)'
+                  );
+                  resolve(book);
+                }).catch(() => {
+                  resolve(null);
+                });
                 httpRequest.destroy();
                 return;
               }
@@ -452,6 +524,7 @@ struct Index {
         // Geometric minimalist cover
         Column() {
           Image(item.cover)
+            .alt($r('app.media.cover_placeholder'))
             .width('100%')
             .height(150)
             .objectFit(ImageFit.Contain)
@@ -505,6 +578,7 @@ struct Index {
           id: item.id,
           title: item.title,
           author: item.author,
+          cover: item.cover,
           coverColor: item.coverColor,
           status: item.status,
           summary: item.summary,
@@ -985,6 +1059,7 @@ struct Index {
             // Book Cover Preview
             Column() {
               Image(this.pendingBook.cover)
+                .alt($r('app.media.cover_placeholder'))
                 .width(100)
                 .height(130)
                 .objectFit(ImageFit.Contain)

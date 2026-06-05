@@ -2,7 +2,7 @@ export class BookItem {
   id: string;
   title: string;
   author: string;
-  cover: Resource;
+  cover: string | Resource;
   coverColor: string; // Used to paint a custom minimalist cover background
   status: 'unread' | 'reading' | 'read'; // 'unread' = 未读, 'reading' = 在读, 'read' = 已读
   summary: string;
@@ -16,7 +16,7 @@ export class BookItem {
     id: string,
     title: string,
     author: string,
-    cover: Resource,
+    cover: string | Resource,
     coverColor: string,
     status: 'unread' | 'reading' | 'read',
     summary: string,
