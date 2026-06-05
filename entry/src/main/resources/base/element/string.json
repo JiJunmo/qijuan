@@ -1,0 +1,52 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Entry module for myBookStore application"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "Main entry ability of myBookStore"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "myBookStore"
+    },
+    {
+      "name": "tab_book_list",
+      "value": "图书"
+    },
+    {
+      "name": "tab_scan_book",
+      "value": "扫码录入"
+    },
+    {
+      "name": "tab_profile",
+      "value": "我"
+    },
+    {
+      "name": "search_placeholder",
+      "value": "搜索图书书名..."
+    },
+    {
+      "name": "filter_all",
+      "value": "全部"
+    },
+    {
+      "name": "filter_unread",
+      "value": "未读"
+    },
+    {
+      "name": "filter_reading",
+      "value": "在读"
+    },
+    {
+      "name": "filter_read",
+      "value": "已读"
+    },
+    {
+      "name": "perm_camera_desc",
+      "value": "需要相机权限以扫描图书的ISBN条形码"
+    }
+  ]
+}
