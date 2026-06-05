@@ -61,6 +61,39 @@ struct BookDetail {
     });
   }
 
+  confirmDeleteBook() {
+    AlertDialog.show({
+      title: '删除书籍',
+      message: `确定要将《${this.title}》从书架删除吗？删除后将无法恢复。`,
+      autoCancel: true,
+      alignment: DialogAlignment.Bottom,
+      gridCount: 4,
+      offset: { dx: 0, dy: -20 },
+      primaryButton: {
+        value: '取消',
+        action: () => {
+          console.info('Delete canceled');
+        }
+      },
+      secondaryButton: {
+        value: '确认删除',
+        fontColor: '#D32F2F',
+        action: () => {
+          router.back({
+            url: 'pages/Index',
+            params: {
+              deleteBookId: this.bookId
+            }
+          });
+          promptAction.showToast({
+            message: `《${this.title}》已成功从书架移除`,
+            duration: 2000
+          });
+        }
+      }
+    });
+  }
+
   @Builder MetaRow(label: string, value: string) {
     Row() {
       Text(label)
@@ -110,7 +143,13 @@ struct BookDetail {
         .height(40)
         .justifyContent(FlexAlign.Center)
         .onClick(() => {
-          router.back();
+          router.back({
+            url: 'pages/Index',
+            params: {
+              updatedBookId: this.bookId,
+              updatedStatus: this.status
+            }
+          });
         })
 
         Text('图书详情')
@@ -118,6 +157,20 @@ struct BookDetail {
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 8 })
+
+        Image($r('app.media.ic_more'))
+          .width(20)
+          .height(20)
+          .margin({ left: 8 })
+          .fillColor($r('app.color.text_primary'))
+          .bindMenu([
+            {
+              value: '从书架删除',
+              action: () => {
+                this.confirmDeleteBook();
+              }
+            }
+          ])
 
         Blank()
       }

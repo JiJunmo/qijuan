@@ -40,6 +40,31 @@ struct Index {
     }
   }
 
+  onPageShow() {
+    try {
+      let params = router.getParams() as Record<string, Object>;
+      if (params) {
+        if (params.deleteBookId) {
+          let idToDelete = params.deleteBookId as string;
+          this.books = this.books.filter(book => book.id !== idToDelete);
+          params.deleteBookId = '';
+        } else if (params.updatedBookId) {
+          let idToUpdate = params.updatedBookId as string;
+          let newStatus = params.updatedStatus as 'unread' | 'reading' | 'read';
+          this.books = this.books.map(book => {
+            if (book.id === idToUpdate) {
+              book.status = newStatus;
+            }
+            return book;
+          });
+          params.updatedBookId = '';
+        }
+      }
+    } catch (err) {
+      console.error('onPageShow sync error: ' + JSON.stringify(err));
+    }
+  }
+
   aboutToDisappear() {
     this.stopScan();
   }
