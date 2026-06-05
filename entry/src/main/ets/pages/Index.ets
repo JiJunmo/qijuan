@@ -240,9 +240,10 @@ struct Index {
       duration: 2000
     });
 
-    // Auto navigate to library list tab
-    this.currentIndex = 0;
-    this.tabsController.changeIndex(0);
+    // If still on the scanner tab, restart scan for the next barcode
+    if (this.currentIndex === 1) {
+      this.startScan();
+    }
   }
 
   getRandomColor(): string {
