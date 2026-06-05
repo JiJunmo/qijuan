@@ -257,7 +257,7 @@ struct Index {
           (err, data) => {
             if (!err && data.responseCode === 200) {
               try {
-                let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNCATE);
+                let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
                 fs.writeSync(file.fd, data.result as ArrayBuffer);
                 fs.closeSync(file);
                 resolve('file://' + filePath);
