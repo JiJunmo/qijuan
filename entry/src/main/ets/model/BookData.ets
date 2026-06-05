@@ -11,6 +11,7 @@ export class BookItem {
   pages: number;
   isbn: string;
   category: string;
+  addTime: string;
 
   constructor(
     id: string,
@@ -24,7 +25,8 @@ export class BookItem {
     publishDate: string,
     pages: number,
     isbn: string,
-    category: string
+    category: string,
+    addTime?: string
   ) {
     this.id = id;
     this.title = title;
@@ -38,8 +40,22 @@ export class BookItem {
     this.pages = pages;
     this.isbn = isbn;
     this.category = category;
+    
+    if (addTime) {
+      this.addTime = addTime;
+    } else {
+      const date = new Date();
+      const y = date.getFullYear();
+      const mVal = date.getMonth() + 1;
+      const m = mVal < 10 ? '0' + mVal : '' + mVal;
+      const dVal = date.getDate();
+      const d = dVal < 10 ? '0' + dVal : '' + dVal;
+      this.addTime = `${y}-${m}-${d}`;
+    }
   }
 }
+
+export const BOOK_CATEGORIES: string[] = ['文学', '人文社科', '文教语言', '艺术', '计算机', '数理生化', '工程机械', '医药生活', '其他'];
 
 export const MOCK_BOOKS: BookItem[] = [
   new BookItem(
@@ -54,7 +70,8 @@ export const MOCK_BOOKS: BookItem[] = [
     '2020-03',
     324,
     '9787544781206',
-    '哲学/散文'
+    '文学',
+    '2026-05-10'
   ),
   new BookItem(
     '2',
@@ -68,7 +85,8 @@ export const MOCK_BOOKS: BookItem[] = [
     '2018-06',
     286,
     '9787532777174',
-    '外国文学'
+    '文学',
+    '2026-03-15'
   ),
   new BookItem(
     '3',
@@ -82,7 +100,8 @@ export const MOCK_BOOKS: BookItem[] = [
     '2017-05',
     118,
     '9787020126742',
-    '儿童文学/寓言'
+    '文学',
+    '2025-11-20'
   ),
   new BookItem(
     '4',
@@ -96,7 +115,8 @@ export const MOCK_BOOKS: BookItem[] = [
     '2012-01',
     302,
     '9787536692930',
-    '科幻小说'
+    '文学',
+    '2025-08-05'
   ),
   new BookItem(
     '5',
@@ -110,7 +130,8 @@ export const MOCK_BOOKS: BookItem[] = [
     '2014-11',
     440,
     '9787508647357',
-    '历史/科普'
+    '人文社科',
+    '2024-12-10'
   ),
   new BookItem(
     '6',
@@ -119,12 +140,13 @@ export const MOCK_BOOKS: BookItem[] = [
     $r('app.media.cover_placeholder'),
     '#7D6B88',
     'read',
-    '提出了一种非暴力的沟通方式（简称NVC），指导人们通过表达观察、感受、需要和请求，建立起真诚、和谐、充满关爱的人际关系。',
+    '提出了一种非暴力的沟通方式（简称NVC），指导人们通过表达观察、感受、需要 and 请求，建立起真诚、和谐、充满关爱的人际关系。',
     '华夏出版社',
     '2009-01',
     196,
     '9787508048612',
-    '心理学/沟通'
+    '人文社科',
+    '2023-04-18'
   ),
   new BookItem(
     '7',
@@ -138,7 +160,8 @@ export const MOCK_BOOKS: BookItem[] = [
     '2011-06',
     360,
     '9787544253994',
-    '世界名著'
+    '文学',
+    '2022-09-30'
   ),
   new BookItem(
     '8',
@@ -152,6 +175,7 @@ export const MOCK_BOOKS: BookItem[] = [
     '2012-08',
     215,
     '9787530211755',
-    '中国文学'
+    '文学',
+    '2021-06-12'
   )
 ];

@@ -1,24 +1,8 @@
 {
   "app": {
-    "signingConfigs": [
-      {
-        "name": "default",
-        "type": "HarmonyOS",
-        "material": {
-          "certpath": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001B1A65CECC4432CACECDA7BC0F8E9E49B8622EFA35E7467AD2099ABBF534B6D3F6B958D874ECFA12",
-          "profile": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.p7b",
-          "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.p12",
-          "storePassword": "0000001BAF9C1B8F28FD42CFFBC9287F7C1F0A47BAC103C523FC2805D992807BE3D970A8FE7A8857B10F60"
-        }
-      }
-    ],
     "products": [
       {
         "name": "default",
-        "signingConfig": "default",
         "targetSdkVersion": "6.1.1(24)",
         "compatibleSdkVersion": "6.0.0(20)",
         "runtimeOS": "HarmonyOS",

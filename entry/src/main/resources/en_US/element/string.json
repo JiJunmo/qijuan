@@ -2,51 +2,51 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "Entry module for 栖卷 application"
+      "value": "Entry module for qijuan application"
     },
     {
       "name": "EntryAbility_desc",
-      "value": "Main entry ability of 栖卷"
+      "value": "Main entry ability of qijuan"
     },
     {
       "name": "EntryAbility_label",
-      "value": "栖卷"
+      "value": "qijuan"
     },
     {
       "name": "tab_book_list",
-      "value": "图书"
+      "value": "Books"
     },
     {
       "name": "tab_scan_book",
-      "value": "扫码录入"
+      "value": "Scan"
     },
     {
       "name": "tab_profile",
-      "value": "我"
+      "value": "Me"
     },
     {
       "name": "search_placeholder",
-      "value": "搜索图书书名..."
+      "value": "Search books..."
     },
     {
       "name": "filter_all",
-      "value": "全部"
+      "value": "All"
     },
     {
       "name": "filter_unread",
-      "value": "未读"
+      "value": "Unread"
     },
     {
       "name": "filter_reading",
-      "value": "在读"
+      "value": "Reading"
     },
     {
       "name": "filter_read",
-      "value": "已读"
+      "value": "Read"
     },
     {
       "name": "perm_camera_desc",
-      "value": "需要相机权限以扫描图书的ISBN条形码"
+      "value": "Camera permission is required to scan ISBN barcodes."
     }
   ]
 }

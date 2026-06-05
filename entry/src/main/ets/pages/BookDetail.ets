@@ -1,5 +1,6 @@
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
+import { BOOK_CATEGORIES } from '../model/BookData';
 
 interface RouteParams {
   id?: string;
@@ -14,6 +15,7 @@ interface RouteParams {
   pages?: number;
   isbn?: string;
   category?: string;
+  addTime?: string;
 }
 
 @Entry
@@ -31,6 +33,7 @@ struct BookDetail {
   @State pages: number = 0;
   @State isbn: string = '';
   @State category: string = '';
+  @State addTime: string = '';
   @State userNote: string = '';
 
   aboutToAppear() {
@@ -48,6 +51,7 @@ struct BookDetail {
       this.pages = params.pages || 0;
       this.isbn = params.isbn || '--';
       this.category = params.category || '未分类';
+      this.addTime = params.addTime || '';
     }
   }
 
@@ -89,6 +93,19 @@ struct BookDetail {
             message: `《${this.title}》已成功从书架移除`,
             duration: 2000
           });
+        }
+      }
+    });
+  }
+
+  showCategoryPicker() {
+    TextPickerDialog.show({
+      range: BOOK_CATEGORIES,
+      selected: BOOK_CATEGORIES.indexOf(this.category) >= 0 ? BOOK_CATEGORIES.indexOf(this.category) : BOOK_CATEGORIES.indexOf('其他'),
+      onAccept: (value: TextPickerResult) => {
+        if (value.value && typeof value.value === 'string') {
+          this.category = value.value;
+          promptAction.showToast({ message: `分类已修改为: ${this.category}`, duration: 1500 });
         }
       }
     });
@@ -147,7 +164,8 @@ struct BookDetail {
             url: 'pages/Index',
             params: {
               updatedBookId: this.bookId,
-              updatedStatus: this.status
+              updatedStatus: this.status,
+              updatedCategory: this.category
             }
           });
         })
@@ -158,12 +176,19 @@ struct BookDetail {
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 8 })
 
+        Blank()
+
         Image($r('app.media.ic_more'))
           .width(20)
           .height(20)
-          .margin({ left: 8 })
           .fillColor($r('app.color.text_primary'))
           .bindMenu([
+            {
+              value: '修改分类',
+              action: () => {
+                this.showCategoryPicker();
+              }
+            },
             {
               value: '从书架删除',
               action: () => {
@@ -171,8 +196,6 @@ struct BookDetail {
               }
             }
           ])
-
-        Blank()
       }
       .width('100%')
       .height(56)
@@ -238,6 +261,7 @@ struct BookDetail {
             this.MetaRow('出版日期', this.publishDate)
             this.MetaRow('书籍页数', `${this.pages} 页`)
             this.MetaRow('ISBN 编码', this.isbn)
+            this.MetaRow('藏书时间', this.addTime)
           }
           .width('100%')
           .padding(16)
@@ -298,7 +322,7 @@ struct BookDetail {
           .margin({ bottom: 30 })
         }
         .width('100%')
-        .padding({ left: 16, right: 16 })
+        .padding({ left: 16, right: 16, top: 16 })
       }
       .layoutWeight(1)
     }
