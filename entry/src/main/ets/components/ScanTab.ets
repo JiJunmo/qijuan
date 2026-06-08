@@ -6,6 +6,8 @@ import { customScan, scanBarcode, scanCore } from '@kit.ScanKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import http from '@ohos.net.http';
 import fs from '@ohos.file.fs';
+import router from '@ohos.router';
+import picker from '@ohos.file.picker';
 
 @Component
 export struct ScanTab {
@@ -18,11 +20,23 @@ export struct ScanTab {
   @State hasCameraPermission: boolean = false;
   @State isSearching: boolean = false;
   @State showConfirmDialog: boolean = false;
+  @State showNoApiDialog: boolean = false;
+  @State showManualEntryDialog: boolean = false;
   @State pendingBook: BookItem = new BookItem('', '', '', $r('app.media.cover_placeholder'), '#5F8575', 'unread', '', '', '', 0, '', '');
+
+  // Manual entry form fields
+  @State manualTitle: string = '';
+  @State manualAuthor: string = '';
+  @State manualPublisher: string = '';
+  @State manualIsbn: string = '';
+  @State manualPages: string = '';
+  @State manualSummary: string = '';
+  @State manualCover: string = '';
 
   private mXComponentController: XComponentController = new XComponentController();
   private cameraWidth: number = 1080;
   private cameraHeight: number = 1920;
+  private isScanning: boolean = false;
 
   aboutToAppear() {
     if (this.currentIndex === 1) {
@@ -44,11 +58,7 @@ export struct ScanTab {
       let hasPermission = this.checkCameraPermission();
       if (hasPermission) {
         this.hasCameraPermission = true;
-        // startScan is handled by XComponent onLoad if it mounts, 
-        // but if it's already mounted we might need to manually start
-        setTimeout(() => {
-          this.startScan();
-        }, 50);
+        // startScan is handled by XComponent onLoad
       } else {
         this.requestCameraPermission();
       }
@@ -94,8 +104,11 @@ export struct ScanTab {
 
   // Start Custom Scan preview
   startScan() {
+    if (this.isScanning) return;
     try {
       let surfaceId: string = this.mXComponentController.getXComponentSurfaceId();
+      if (!surfaceId) return;
+
       let viewControl: customScan.ViewControl = {
         width: this.cameraWidth,
         height: this.cameraHeight,
@@ -109,6 +122,7 @@ export struct ScanTab {
       };
 
       customScan.init(options);
+      this.isScanning = true;
       customScan.start(viewControl).then((scanResult: Array<scanBarcode.ScanResult>) => {
         if (scanResult && scanResult.length > 0) {
           let isbn = scanResult[0].originalValue;
@@ -118,20 +132,51 @@ export struct ScanTab {
         }
       }).catch((error: BusinessError) => {
         console.error(`customScan.start Promise failed: ${error.code}, ${error.message}`);
+        this.isScanning = false;
       });
     } catch (error) {
       const err = error as BusinessError;
       console.error(`customScan start calling error: ${err.code}, ${err.message}`);
+      this.isScanning = false;
     }
   }
 
   // Stop custom scan and release resources
   stopScan() {
+    if (!this.isScanning) return;
     try {
       customScan.stop();
       customScan.release();
     } catch (error) {
       console.error('customScan stop/release error: ' + JSON.stringify(error));
+    } finally {
+      this.isScanning = false;
+    }
+  }
+
+  // Select local image
+  async selectCoverImage() {
+    try {
+      let photoPicker = new picker.PhotoViewPicker();
+      let options = new picker.PhotoSelectOptions();
+      options.MIMEType = picker.PhotoViewMIMETypes.IMAGE_TYPE;
+      options.maxSelectNumber = 1;
+
+      let photoSelectResult = await photoPicker.select(options);
+      if (photoSelectResult && photoSelectResult.photoUris && photoSelectResult.photoUris.length > 0) {
+        let uri = photoSelectResult.photoUris[0];
+        let context = getContext(this) as common.UIAbilityContext;
+        
+        let file = fs.openSync(uri, fs.OpenMode.READ_ONLY);
+        let destPath = context.filesDir + '/cover_local_' + Date.now() + '.jpg';
+        fs.copyFileSync(file.fd, destPath);
+        fs.closeSync(file);
+
+        this.manualCover = 'file://' + destPath;
+      }
+    } catch (err) {
+      console.error('Failed to select cover image: ' + JSON.stringify(err));
+      promptAction.showToast({ message: '选择图片失败' });
     }
   }
 
@@ -272,75 +317,6 @@ export struct ScanTab {
     });
   }
 
-  // 2. Query Google Books (returns Promise<BookItem | null>)
-  queryGoogle(isbn: string): Promise<BookItem | null> {
-    return new Promise((resolve) => {
-      let httpRequest = http.createHttp();
-      let url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`;
-      httpRequest.request(
-        url,
-        {
-          method: http.RequestMethod.GET,
-          header: { 'Content-Type': 'application/json' },
-          connectTimeout: 8000,
-          readTimeout: 8000
-        },
-        (err, data) => {
-          if (!err && data.responseCode === 200) {
-            try {
-              const resObj = JSON.parse(data.result as string) as Record<string, Object>;
-              const items = resObj.items as Object[];
-              if (items && items.length > 0) {
-                const first = items[0] as Record<string, Object>;
-                const volumeInfo = first.volumeInfo as Record<string, Object>;
-                const title = volumeInfo.title as string;
-                const authors = volumeInfo.authors as string[] || ['未知作者'];
-                const desc = volumeInfo.description as string || '暂无内容简介。';
-                const publisher = volumeInfo.publisher as string || '未知出版社';
-                const publishedDate = volumeInfo.publishedDate as string || '--';
-                const pageCount = volumeInfo.pageCount as number || 0;
-                
-                let remoteCover = '';
-                if (volumeInfo.imageLinks && (volumeInfo.imageLinks as Record<string, string>).thumbnail) {
-                  remoteCover = (volumeInfo.imageLinks as Record<string, string>).thumbnail;
-                  if (remoteCover.startsWith('http://')) {
-                    remoteCover = 'https://' + remoteCover.substring(7);
-                  }
-                }
-
-                this.downloadCover(isbn, remoteCover).then((localCover) => {
-                  const book = new BookItem(
-                    (this.books.length + 1).toString(),
-                    title,
-                    authors.join(', '),
-                    localCover,
-                    this.getRandomColor(),
-                    'unread',
-                    desc,
-                    publisher,
-                    publishedDate,
-                    pageCount,
-                    isbn,
-                    '网络录入(Google)'
-                  );
-                  resolve(book);
-                }).catch(() => {
-                  resolve(null);
-                });
-                httpRequest.destroy();
-                return;
-              }
-            } catch (e) {
-              console.error('Google parse error: ' + JSON.stringify(e));
-            }
-          }
-          resolve(null);
-          httpRequest.destroy();
-        }
-      );
-    });
-  }
-
   // Perform cascading multi-source network query
   async fetchBookDetails(isbn: string) {
     if (!isbn || isbn.length < 10) {
@@ -350,9 +326,9 @@ export struct ScanTab {
 
     this.isSearching = true;
 
-    // Step 1: Custom Server API (if configured)
+    // Custom Server API (if configured)
     if (this.customApiUrl) {
-      promptAction.showToast({ message: '第一步：通过自建服务器查询...' });
+      promptAction.showToast({ message: '通过自建服务器查询...' });
       const book = await this.queryCustomServer(isbn);
       if (book) {
         this.pendingBook = book;
@@ -362,20 +338,10 @@ export struct ScanTab {
       }
     }
 
-    // Step 2: Google Books API (free open backup)
-    promptAction.showToast({ message: '第二步：通过 Google Books 查询...' });
-    const gBook = await this.queryGoogle(isbn);
-    if (gBook) {
-      this.pendingBook = gBook;
-      this.showConfirmDialog = true;
-      this.isSearching = false;
-      return;
-    }
-
-    // Both queries failed, inform the user and reset search state
-    promptAction.showToast({ message: '未查询到该书籍详情' });
+    // Failed to query or API not configured
     this.isSearching = false;
-    this.startScan();
+    this.manualIsbn = isbn; // prefill ISBN for manual entry
+    this.showNoApiDialog = true;
   }
 
   // Get the last 10 scanned or added books (newest first)
@@ -486,36 +452,62 @@ export struct ScanTab {
             .alignContent(Alignment.Center)
             .margin({ bottom: 24 })
 
-            // Manual input test tool
-            Row() {
-              TextInput({ text: this.testIsbn, placeholder: '或在此处手动输入ISBN条码...' })
-                .width(220)
-                .height(40)
-                .fontSize(12)
-                .backgroundColor($r('app.color.card_bg'))
-                .placeholderColor($r('app.color.text_secondary'))
-                .borderRadius(8)
-                .onChange((val: string) => {
-                  this.testIsbn = val;
-                })
+            // Manual input test tool and Direct Manual Entry
+            Column() {
+              Row() {
+                TextInput({ text: this.testIsbn, placeholder: '或在此处手动输入ISBN条码...' })
+                  .layoutWeight(1)
+                  .height(40)
+                  .fontSize(12)
+                  .backgroundColor($r('app.color.card_bg'))
+                  .placeholderColor($r('app.color.text_secondary'))
+                  .borderRadius(8)
+                  .onChange((val: string) => {
+                    this.testIsbn = val;
+                  })
 
-              Button(this.isSearching ? '查询中' : '录入')
+                Button(this.isSearching ? '查询中' : '查询并录入')
+                  .fontSize(12)
+                  .height(40)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor('#FFFFFF')
+                  .backgroundColor($r('app.color.primary'))
+                  .margin({ left: 12 })
+                  .onClick(() => {
+                    if (this.isSearching) return;
+                    if (this.testIsbn) {
+                      this.stopScan();
+                      this.fetchBookDetails(this.testIsbn);
+                    } else {
+                      promptAction.showToast({ message: '请输入ISBN码' });
+                    }
+                  })
+              }
+              .width('100%')
+              .padding({ left: 24, right: 24 })
+              .margin({ bottom: 12 })
+
+              // Direct Manual Entry Button
+              Button('跳过条码，直接手动填写书籍信息')
                 .fontSize(12)
-                .height(40)
-                .fontWeight(FontWeight.Medium)
-                .fontColor('#FFFFFF')
-                .backgroundColor($r('app.color.primary'))
-                .margin({ left: 12 })
+                .height(36)
+                .fontColor($r('app.color.primary'))
+                .backgroundColor('transparent')
+                .border({ width: 1, color: $r('app.color.primary'), radius: 18 })
+                .padding({ left: 16, right: 16 })
                 .onClick(() => {
-                  if (this.isSearching) return;
-                  if (this.testIsbn) {
-                    this.stopScan();
-                    this.fetchBookDetails(this.testIsbn);
-                  } else {
-                    promptAction.showToast({ message: '请输入ISBN码' });
-                  }
+                  this.stopScan();
+                  this.manualTitle = '';
+                  this.manualAuthor = '';
+                  this.manualPublisher = '';
+                  this.manualIsbn = this.testIsbn || '';
+                  this.manualPages = '';
+                  this.manualSummary = '';
+                  this.manualCover = '';
+                  this.showManualEntryDialog = true;
                 })
             }
+            .width('100%')
             .margin({ bottom: 32 })
 
             // Recent Scanned / Added History list
@@ -531,10 +523,17 @@ export struct ScanTab {
             .margin({ bottom: 12 })
 
             if (this.getScanHistory().length === 0) {
-              Text('暂无录入记录')
-                .fontSize(12)
-                .fontColor($r('app.color.text_secondary'))
-                .margin({ top: 16 })
+              Column() {
+                Text('可以录入您的书籍了')
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor($r('app.color.text_secondary'))
+                  .fontStyle(FontStyle.Italic)
+                  .letterSpacing(1)
+                  .margin({ top: 32 })
+              }
+              .width('100%')
+              .alignItems(HorizontalAlign.Center)
             } else {
               Column() {
                 ForEach(this.getScanHistory(), (item: BookItem) => {
@@ -576,6 +575,26 @@ export struct ScanTab {
                   .borderRadius(12)
                   .margin({ bottom: 12 })
                   .shadow({ radius: 4, color: '#08000000', offsetY: 2 })
+                  .onClick(() => {
+                    router.pushUrl({
+                      url: 'pages/BookDetail',
+                      params: {
+                        id: item.id,
+                        title: item.title,
+                        author: item.author,
+                        cover: item.cover,
+                        coverColor: item.coverColor,
+                        status: item.status,
+                        summary: item.summary,
+                        publisher: item.publisher,
+                        publishDate: item.publishDate,
+                        pages: item.pages,
+                        isbn: item.isbn,
+                        category: item.category,
+                        addTime: item.addTime
+                      }
+                    });
+                  })
                 }, (item: BookItem) => item.id)
               }
               .width('100%')
@@ -690,6 +709,221 @@ export struct ScanTab {
             .width('100%')
             .justifyContent(FlexAlign.SpaceEvenly)
             .margin({ top: 12 })
+          }
+          .width('85%')
+          .padding(24)
+          .backgroundColor($r('app.color.card_bg'))
+          .borderRadius(16)
+          .shadow({ radius: 12, color: '#30000000', offsetY: 6 })
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor('#60000000') // Translucent mask
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+      }
+
+      // No API Configured Dialog
+      if (this.showNoApiDialog) {
+        Column() {
+          Column() {
+            Text('未查询到数据')
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+              .fontColor($r('app.color.text_primary'))
+              .margin({ bottom: 16 })
+            
+            Text('本应用为纯本地工具，不提供在线云端接口获取书籍详情。您可以前往「我-设置」页面接入自己的ISBN查询接口，服务器返回JSON格式参考：')
+              .fontSize(13)
+              .fontColor($r('app.color.text_secondary'))
+              .lineHeight(18)
+              .margin({ bottom: 12 })
+              
+            // Code block for JSON format
+            Column() {
+              Text('{\n  "title": "书籍名称",\n  "author": "作者",\n  "cover": "封面图片URL",\n  "summary": "内容简介",\n  "publisher": "出版社",\n  "pubdate": "出版日期",\n  "pages": "页数(数字)"\n}')
+                .fontSize(12)
+                .fontFamily('monospace')
+                .fontColor($r('app.color.text_secondary'))
+                .lineHeight(16)
+            }
+            .width('100%')
+            .backgroundColor('#E8EAE8')
+            .padding(12)
+            .borderRadius(8)
+            .margin({ bottom: 20 })
+
+            Row() {
+              Button('关闭')
+                .width(100)
+                .height(36)
+                .fontSize(14)
+                .fontColor($r('app.color.text_primary'))
+                .backgroundColor($r('app.color.background'))
+                .onClick(() => {
+                  this.showNoApiDialog = false;
+                  this.startScan();
+                })
+              
+              Button('手动填写录入')
+                .width(120)
+                .height(36)
+                .fontSize(14)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#FFFFFF')
+                .backgroundColor($r('app.color.primary'))
+                .onClick(() => {
+                  this.showNoApiDialog = false;
+                  this.manualTitle = '';
+                  this.manualAuthor = '';
+                  this.manualPublisher = '';
+                  this.manualPages = '';
+                  this.manualSummary = '';
+                  this.manualIsbn = '';
+                  this.manualCover = '';
+                  this.showManualEntryDialog = true;
+                })
+            }
+            .width('100%')
+            .justifyContent(FlexAlign.SpaceEvenly)
+          }
+          .width('85%')
+          .padding(24)
+          .backgroundColor($r('app.color.card_bg'))
+          .borderRadius(16)
+          .shadow({ radius: 12, color: '#30000000', offsetY: 6 })
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor('#60000000') // Translucent mask
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+      }
+
+      // Manual Entry Dialog
+      if (this.showManualEntryDialog) {
+        Column() {
+          Column() {
+            Text('手动录入书籍')
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+              .fontColor($r('app.color.text_primary'))
+              .margin({ bottom: 16 })
+            
+            Scroll() {
+              Column() {
+                // Cover preview / selection area
+                Row() {
+                  if (this.manualCover) {
+                    Image(this.manualCover)
+                      .width(80)
+                      .height(110)
+                      .objectFit(ImageFit.Cover)
+                      .borderRadius(8)
+                      .onClick(() => {
+                        this.selectCoverImage();
+                      })
+                  } else {
+                    Column() {
+                      Text('+')
+                        .fontSize(24)
+                        .fontColor($r('app.color.text_secondary'))
+                        .margin({ bottom: 4 })
+                      Text('添加封面')
+                        .fontSize(12)
+                        .fontColor($r('app.color.text_secondary'))
+                    }
+                    .width(80)
+                    .height(110)
+                    .backgroundColor('#F0F0F0')
+                    .borderRadius(8)
+                    .justifyContent(FlexAlign.Center)
+                    .onClick(() => {
+                      this.selectCoverImage();
+                    })
+                  }
+                }
+                .width('100%')
+                .justifyContent(FlexAlign.Center)
+                .margin({ bottom: 16 })
+
+                TextInput({ text: this.manualTitle, placeholder: '书籍名称 (必填)' })
+                  .height(40).fontSize(14).margin({ bottom: 12 })
+                  .onChange((val: string) => this.manualTitle = val)
+                
+                TextInput({ text: this.manualAuthor, placeholder: '作者 (选填)' })
+                  .height(40).fontSize(14).margin({ bottom: 12 })
+                  .onChange((val: string) => this.manualAuthor = val)
+
+                TextInput({ text: this.manualPublisher, placeholder: '出版社 (选填)' })
+                  .height(40).fontSize(14).margin({ bottom: 12 })
+                  .onChange((val: string) => this.manualPublisher = val)
+
+                TextInput({ text: this.manualIsbn, placeholder: 'ISBN (选填)' })
+                  .height(40).fontSize(14).margin({ bottom: 12 })
+                  .onChange((val: string) => this.manualIsbn = val)
+
+                TextInput({ text: this.manualPages, placeholder: '页数 (选填)' })
+                  .height(40).fontSize(14).margin({ bottom: 12 }).type(InputType.Number)
+                  .onChange((val: string) => this.manualPages = val)
+
+                TextArea({ text: this.manualSummary, placeholder: '内容简介 (选填)' })
+                  .height(80).fontSize(14).margin({ bottom: 16 })
+                  .onChange((val: string) => this.manualSummary = val)
+              }
+              .width('100%')
+            }
+            .height(300)
+            .scrollBar(BarState.Off)
+            .margin({ bottom: 12 })
+
+            Row() {
+              Button('取消')
+                .width(100)
+                .height(36)
+                .fontSize(14)
+                .fontColor($r('app.color.text_primary'))
+                .backgroundColor($r('app.color.background'))
+                .onClick(() => {
+                  this.showManualEntryDialog = false;
+                  this.startScan();
+                })
+              
+              Button('保存录入')
+                .width(120)
+                .height(36)
+                .fontSize(14)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#FFFFFF')
+                .backgroundColor($r('app.color.primary'))
+                .onClick(() => {
+                  if (!this.manualTitle.trim()) {
+                    promptAction.showToast({ message: '请输入书籍名称' });
+                    return;
+                  }
+                  
+                  const book = new BookItem(
+                    (this.books.length + 1).toString(),
+                    this.manualTitle.trim(),
+                    this.manualAuthor.trim() || '未知作者',
+                    this.manualCover || $r('app.media.cover_placeholder'), // local URI or default
+                    this.getRandomColor(),
+                    'unread',
+                    this.manualSummary.trim() || '暂无内容简介。',
+                    this.manualPublisher.trim() || '未知出版社',
+                    '--', // default pub date
+                    parseInt(this.manualPages) || 0,
+                    this.manualIsbn.trim() || '',
+                    '手动录入'
+                  );
+                  
+                  this.pendingBook = book;
+                  this.confirmAddBook(); // uses pendingBook
+                  this.showManualEntryDialog = false;
+                })
+            }
+            .width('100%')
+            .justifyContent(FlexAlign.SpaceEvenly)
           }
           .width('85%')
           .padding(24)

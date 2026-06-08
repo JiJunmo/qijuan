@@ -223,14 +223,14 @@ export struct ProfileTab {
       }
 
       const width = this.context.width || 300;
-      const height = this.context.height || 130;
+      const height = this.context.height || 160;
 
       this.context.clearRect(0, 0, width, height);
 
       const leftPad = 25;
       const rightPad = 15;
       const topPad = 20;
-      const bottomPad = 20;
+      const bottomPad = 35;
 
       const chartW = width - leftPad - rightPad;
       const chartH = height - topPad - bottomPad;
@@ -614,7 +614,7 @@ export struct ProfileTab {
               // Canvas for Custom Line Chart
               Canvas(this.context)
                 .width('100%')
-                .height(130)
+                .height(160)
                 .onReady(() => {
                   this.drawTimeChart();
                 })

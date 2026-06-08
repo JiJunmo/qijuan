@@ -5,11 +5,13 @@ import { BookshelfTab } from '../components/BookshelfTab';
 import { ScanTab } from '../components/ScanTab';
 import { ProfileTab } from '../components/ProfileTab';
 import { SettingsOverlay } from '../components/SettingsOverlay';
+import { NoteItem } from '../model/NoteData';
 
 @Entry
 @Component
 struct Index {
-  @State @Watch('onBooksChange') books: BookItem[] = MOCK_BOOKS;
+  @StorageLink('globalBooks') @Watch('onBooksChange') books: BookItem[] = [];
+  @StorageLink('globalNotes') @Watch('onNotesChange') notes: NoteItem[] = [];
   @State timeFilter: string = 'year'; // 'year' | 'all'
   @State searchText: string = '';
   @State filterStatus: string = 'all'; // 'all' | 'unread' | 'reading' | 'read'
@@ -23,6 +25,7 @@ struct Index {
 
   aboutToAppear() {
     this.loadBooksFromPreferences();
+    this.loadNotesFromPreferences();
     this.loadServerConfigs();
   }
 
@@ -69,6 +72,10 @@ struct Index {
     this.saveBooksToPreferences();
   }
 
+  onNotesChange() {
+    this.saveNotesToPreferences();
+  }
+
   // Save books list to preferences
   saveBooksToPreferences() {
     try {
@@ -90,6 +97,28 @@ struct Index {
       }
     } catch (err) {
       console.error('Failed to load books: ' + JSON.stringify(err));
+    }
+  }
+
+  saveNotesToPreferences() {
+    try {
+      let pref = dataPreferences.getPreferencesSync(getContext(this), { name: 'myBookStorePrefs' });
+      pref.putSync('notesList', JSON.stringify(this.notes));
+      pref.flushSync();
+    } catch (err) {
+      console.error('Failed to save notes: ' + JSON.stringify(err));
+    }
+  }
+
+  loadNotesFromPreferences() {
+    try {
+      let pref = dataPreferences.getPreferencesSync(getContext(this), { name: 'myBookStorePrefs' });
+      let notesStr = pref.getSync('notesList', '') as string;
+      if (notesStr) {
+        this.notes = JSON.parse(notesStr) as NoteItem[];
+      }
+    } catch (err) {
+      console.error('Failed to load notes: ' + JSON.stringify(err));
     }
   }
 

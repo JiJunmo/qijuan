@@ -184,8 +184,11 @@ export struct BookshelfTab {
             .height(100)
             .margin({ bottom: 16 })
             .opacity(0.3)
-          Text('书房里没有找到符合条件的书籍')
-            .fontSize(14)
+          Text(this.books.length === 0 ? '可以录入您的书籍了' : '书房里没有找到符合条件的书籍')
+            .fontSize(this.books.length === 0 ? 18 : 14)
+            .fontWeight(this.books.length === 0 ? FontWeight.Medium : FontWeight.Normal)
+            .fontStyle(this.books.length === 0 ? FontStyle.Italic : FontStyle.Normal)
+            .letterSpacing(this.books.length === 0 ? 1 : 0)
             .fontColor($r('app.color.text_secondary'))
         }
         .width('100%')
@@ -198,7 +201,7 @@ export struct BookshelfTab {
             GridItem() {
               this.BookCardBuilder(item)
             }
-          }, (item: BookItem) => item.id)
+          }, (item: BookItem) => item.id + '_' + item.status + '_' + item.category)
         }
         .columnsTemplate('1fr 1fr')
         .columnsGap(14)

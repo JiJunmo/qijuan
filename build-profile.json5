@@ -6,6 +6,7 @@
         "targetSdkVersion": "6.1.1(24)",
         "compatibleSdkVersion": "6.0.0(20)",
         "runtimeOS": "HarmonyOS",
+        "signingConfig": "default",
         "buildOption": {
           "strictMode": {
             "caseSensitiveCheck": true,
@@ -16,10 +17,25 @@
     ],
     "buildModeSet": [
       {
-        "name": "debug",
+        "name": "debug"
       },
       {
         "name": "release"
+      }
+    ],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B5BF3F81BDB5556428BA8DF3E93559A96F5171675406B55D582E4BA8350D2BFE4C0D33BB638B9CA",
+          "profile": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.p12",
+          "storePassword": "0000001B08F6EEF661D08460D80EC56CD0D11F302BDE3E3A355A4C0D37F5FF678945B93F296E5275958CD1"
+        }
       }
     ]
   },
