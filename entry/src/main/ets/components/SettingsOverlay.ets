@@ -124,10 +124,12 @@ export struct SettingsOverlay {
                 this.ProfileSettingItem('书房管理设置', '整理书籍与标签')
                 Divider().color($r('app.color.divider')).margin({ top: 12, bottom: 12 })
 
-                // 自建服务器 API 地址
+                // Custom API URL is hidden from UI per user request
+
+                // 邀请码
                 Column() {
                   Row() {
-                    Text('自建服务器 API 地址')
+                    Text('邀请码')
                       .fontSize(14)
                       .fontWeight(FontWeight.Medium)
                       .fontColor($r('app.color.text_primary'))
@@ -136,35 +138,7 @@ export struct SettingsOverlay {
                   .width('100%')
                   .margin({ bottom: 6 })
 
-                  TextInput({ text: this.customApiUrl, placeholder: '输入自建服务器接口' })
-                    .width('100%')
-                    .height(40)
-                    .fontSize(12)
-                    .backgroundColor($r('app.color.background'))
-                    .borderRadius(8)
-                    .placeholderColor($r('app.color.text_secondary'))
-                    .onChange((val: string) => {
-                      this.customApiUrl = val;
-                      this.saveCustomApiUrl(val);
-                    })
-                }
-                .width('100%')
-                .alignItems(HorizontalAlign.Start)
-                .margin({ bottom: 16 })
-
-                // API 访问密钥 (Token)
-                Column() {
-                  Row() {
-                    Text('API 访问密钥 (Token)')
-                      .fontSize(14)
-                      .fontWeight(FontWeight.Medium)
-                      .fontColor($r('app.color.text_primary'))
-                    Blank()
-                  }
-                  .width('100%')
-                  .margin({ bottom: 6 })
-
-                  TextInput({ text: this.customApiToken, placeholder: 'API 校验密钥 Token' })
+                  TextInput({ text: this.customApiToken, placeholder: '输入邀请码' })
                     .width('100%')
                     .height(40)
                     .fontSize(12)
@@ -185,7 +159,7 @@ export struct SettingsOverlay {
                   this.exportBooksToLocal();
                 })
                 Divider().color($r('app.color.divider')).margin({ top: 12, bottom: 12 })
-                this.ProfileSettingItem('关于 栖卷', '版本 1.0.0 (支持自定义API)', () => {
+                this.ProfileSettingItem('关于 栖卷', '版本 1.0.0', () => {
                   this.showAboutOverlay = true;
                 })
                 Divider().color($r('app.color.divider')).margin({ top: 12, bottom: 12 })
@@ -262,9 +236,9 @@ export struct SettingsOverlay {
                 Text('栖卷 是一款致力于为您提供纯粹、清爽阅读管理的本地化应用。在这里，您可以轻松整理您的藏书、跟进阅读进度，并记录下每一次阅读的心得体会，让每一次翻页的记忆都得以妥善安放。')
                   .fontSize(13).fontColor($r('app.color.text_secondary')).lineHeight(20).margin({ bottom: 16 })
 
-                Text('🔌 关于扫码查询与自建服务器')
+                Text('🔌 关于图书扫码录入功能')
                   .fontSize(14).fontWeight(FontWeight.Bold).fontColor($r('app.color.text_primary')).margin({ bottom: 6 })
-                Text('为了给您提供极简、无商业干扰的体验，本应用暂不直接内置第三方图书数据库。本应用目前采用邀请制，可以联系作者获取邀请码，也可以自建服务器，服务器格式xxx还和之前一样。您可以在设置中配置您的 API 地址与密钥 (Token)（即邀请码）。\n• 请求方式：GET\n• 请求参数：应用将自动向您的 API 地址拼接 ?isbn=[ISBN]&token=[您的Token] 进行请求。\n• 返回格式：为了能够被正确解析，请确保您的服务器返回标准的 JSON 格式数据，建议包含 title(书名), author(作者), cover(封面链接), summary(简介), publisher(出版社), category(分类) 等基本字段。')
+                Text('为了给您提供极简、无商业干扰的体验，本应用目前采用邀请制，不直接对外提供大规模图书接口。若需要使用“扫码录入”功能，请通过下方的邮箱联系开发者获取邀请码，并在上方设置中填写邀请码后即可正常使用。')
                   .fontSize(13).fontColor($r('app.color.text_secondary')).lineHeight(20).margin({ bottom: 16 })
 
                 Text('🔒 关于数据隐私与安全提示')

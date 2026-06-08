@@ -328,7 +328,7 @@ export struct ScanTab {
 
     // Custom Server API (if configured)
     if (this.customApiUrl) {
-      promptAction.showToast({ message: '通过自建服务器查询...' });
+      promptAction.showToast({ message: '正在查询...' });
       const book = await this.queryCustomServer(isbn);
       if (book) {
         this.pendingBook = book;
@@ -733,25 +733,11 @@ export struct ScanTab {
               .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 16 })
             
-            Text('本应用为纯本地工具，不提供在线云端接口获取书籍详情。本应用目前采用邀请制，可以联系作者获取邀请码，也可以自建服务器，服务器格式xxx还和之前一样。服务器返回JSON格式参考：')
+            Text('未查询到相关书籍信息。本应用目前处于内测邀请阶段，如需使用云端扫码录入功能，请通过设置页面联系开发者邮箱获取专属邀请码，配置后即可直接获取图书信息。')
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .lineHeight(18)
-              .margin({ bottom: 12 })
-              
-            // Code block for JSON format
-            Column() {
-              Text('{\n  "title": "书籍名称",\n  "author": "作者",\n  "cover": "封面图片URL",\n  "summary": "内容简介",\n  "publisher": "出版社",\n  "pubdate": "出版日期",\n  "pages": "页数(数字)"\n}')
-                .fontSize(12)
-                .fontFamily('monospace')
-                .fontColor($r('app.color.text_secondary'))
-                .lineHeight(16)
-            }
-            .width('100%')
-            .backgroundColor('#E8EAE8')
-            .padding(12)
-            .borderRadius(8)
-            .margin({ bottom: 20 })
+              .margin({ bottom: 20 })
 
             Row() {
               Button('关闭')
