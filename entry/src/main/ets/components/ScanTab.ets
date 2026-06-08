@@ -652,10 +652,7 @@ export struct ScanTab {
               .fontColor($r('app.color.text_secondary'))
               .margin({ bottom: 4 })
 
-            Text(`数据来源: ${this.pendingBook.category}`)
-              .fontSize(12)
-              .fontColor($r('app.color.primary'))
-              .margin({ bottom: 16 })
+
 
             Text(this.pendingBook.summary)
               .fontSize(12)
