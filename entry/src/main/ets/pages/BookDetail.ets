@@ -327,7 +327,7 @@ struct BookDetail {
             .margin({ bottom: 12 })
 
             if (this.getBookNotes().length === 0) {
-              Text('暂无笔记，您可以在“笔记”Tab中新建并关联到此书。')
+              Text('暂无笔记')
                 .fontSize(13)
                 .fontColor($r('app.color.text_secondary'))
                 .fontStyle(FontStyle.Italic)
