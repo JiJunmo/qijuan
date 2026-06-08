@@ -733,7 +733,7 @@ export struct ScanTab {
               .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 16 })
             
-            Text('本应用为纯本地工具，不提供在线云端接口获取书籍详情。您可以前往「我-设置」页面接入自己的ISBN查询接口，服务器返回JSON格式参考：')
+            Text('本应用为纯本地工具，不提供在线云端接口获取书籍详情。本应用目前采用邀请制，可以联系作者获取邀请码，也可以自建服务器，服务器格式xxx还和之前一样。服务器返回JSON格式参考：')
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .lineHeight(18)

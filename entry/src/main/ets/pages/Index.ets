@@ -60,7 +60,8 @@ struct Index {
   loadServerConfigs() {
     try {
       let pref = dataPreferences.getPreferencesSync(getContext(this), { name: 'myBookStorePrefs' });
-      this.customApiUrl = pref.getSync('customApiUrl', '') as string;
+      let storedUrl = pref.getSync('customApiUrl', '') as string;
+      this.customApiUrl = storedUrl ? storedUrl : 'http://118.25.58.73:11221/api/book';
       this.customApiToken = pref.getSync('customApiToken', '') as string;
     } catch (err) {
       console.error('Failed to load server configs: ' + JSON.stringify(err));
