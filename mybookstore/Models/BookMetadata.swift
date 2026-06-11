@@ -22,7 +22,7 @@ struct BookMetadata: Codable {
         case publisher
         case pubdate
         case pages
-        case isbn = "isbn13" // 尝试匹配常用的 isbn13 字段
+        case isbn
     }
     
     init(from decoder: Decoder) throws {
