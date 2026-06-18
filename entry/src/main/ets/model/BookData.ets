@@ -12,6 +12,7 @@ export class BookItem {
   isbn: string;
   category: string;
   addTime: string;
+  currentPage: number;
 
   constructor(
     id: string,
@@ -26,7 +27,8 @@ export class BookItem {
     pages: number,
     isbn: string,
     category: string,
-    addTime?: string
+    addTime?: string,
+    currentPage?: number
   ) {
     this.id = id;
     this.title = title;
@@ -40,6 +42,7 @@ export class BookItem {
     this.pages = pages;
     this.isbn = isbn;
     this.category = category;
+    this.currentPage = currentPage !== undefined ? currentPage : 0;
     
     if (addTime) {
       this.addTime = addTime;

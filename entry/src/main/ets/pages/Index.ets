@@ -4,14 +4,17 @@ import { BookItem, MOCK_BOOKS } from '../model/BookData';
 import { BookshelfTab } from '../components/BookshelfTab';
 import { ScanTab } from '../components/ScanTab';
 import { ProfileTab } from '../components/ProfileTab';
+import { CalendarTab } from '../components/CalendarTab';
 import { SettingsOverlay } from '../components/SettingsOverlay';
 import { NoteItem } from '../model/NoteData';
+import { ReadingSession } from '../model/ReadingSessionData';
 
 @Entry
 @Component
 struct Index {
   @StorageLink('globalBooks') @Watch('onBooksChange') books: BookItem[] = [];
   @StorageLink('globalNotes') @Watch('onNotesChange') notes: NoteItem[] = [];
+  @StorageLink('globalReadingSessions') @Watch('onReadingSessionsChange') readingSessions: ReadingSession[] = [];
   @State timeFilter: string = 'year'; // 'year' | 'all'
   @State searchText: string = '';
   @State filterStatus: string = 'all'; // 'all' | 'unread' | 'reading' | 'read'
@@ -26,6 +29,7 @@ struct Index {
   aboutToAppear() {
     this.loadBooksFromPreferences();
     this.loadNotesFromPreferences();
+    this.loadReadingSessionsFromPreferences();
     this.loadServerConfigs();
   }
 
@@ -61,7 +65,12 @@ struct Index {
     try {
       let pref = dataPreferences.getPreferencesSync(getContext(this), { name: 'myBookStorePrefs' });
       let storedUrl = pref.getSync('customApiUrl', '') as string;
-      this.customApiUrl = storedUrl ? storedUrl : 'http://118.25.58.73:11221/api/book';
+      if (storedUrl === 'http://118.25.58.73:11221/api/book') {
+        storedUrl = ''; // Force override old default
+        pref.putSync('customApiUrl', 'https://jixiaokui.icu/api/book');
+        pref.flush();
+      }
+      this.customApiUrl = storedUrl ? storedUrl : 'https://jixiaokui.icu/api/book';
       this.customApiToken = pref.getSync('customApiToken', '') as string;
     } catch (err) {
       console.error('Failed to load server configs: ' + JSON.stringify(err));
@@ -77,6 +86,10 @@ struct Index {
     this.saveNotesToPreferences();
   }
 
+  onReadingSessionsChange() {
+    this.saveReadingSessionsToPreferences();
+  }
+
   // Save books list to preferences
   saveBooksToPreferences() {
     try {
@@ -88,13 +101,18 @@ struct Index {
     }
   }
 
-  // Load books list from preferences
   loadBooksFromPreferences() {
     try {
       let pref = dataPreferences.getPreferencesSync(getContext(this), { name: 'myBookStorePrefs' });
       let booksStr = pref.getSync('booksList', '') as string;
       if (booksStr) {
-        this.books = JSON.parse(booksStr) as BookItem[];
+        let parsedBooks = JSON.parse(booksStr) as BookItem[];
+        this.books = parsedBooks.map(book => {
+          if (book.currentPage === undefined) {
+            book.currentPage = 0;
+          }
+          return book;
+        });
       }
     } catch (err) {
       console.error('Failed to load books: ' + JSON.stringify(err));
@@ -120,6 +138,28 @@ struct Index {
       }
     } catch (err) {
       console.error('Failed to load notes: ' + JSON.stringify(err));
+    }
+  }
+
+  saveReadingSessionsToPreferences() {
+    try {
+      let pref = dataPreferences.getPreferencesSync(getContext(this), { name: 'myBookStorePrefs' });
+      pref.putSync('readingSessionsList', JSON.stringify(this.readingSessions));
+      pref.flushSync();
+    } catch (err) {
+      console.error('Failed to save reading sessions: ' + JSON.stringify(err));
+    }
+  }
+
+  loadReadingSessionsFromPreferences() {
+    try {
+      let pref = dataPreferences.getPreferencesSync(getContext(this), { name: 'myBookStorePrefs' });
+      let sessionsStr = pref.getSync('readingSessionsList', '') as string;
+      if (sessionsStr) {
+        this.readingSessions = JSON.parse(sessionsStr) as ReadingSession[];
+      }
+    } catch (err) {
+      console.error('Failed to load reading sessions: ' + JSON.stringify(err));
     }
   }
 
@@ -164,13 +204,18 @@ struct Index {
           .tabBar(this.TabBuilder(1, '扫码录入', $r('app.media.ic_scan')))
 
           TabContent() {
+            CalendarTab()
+          }
+          .tabBar(this.TabBuilder(2, '日历', $r('app.media.ic_calendar')))
+
+          TabContent() {
             ProfileTab({
               books: $books,
               timeFilter: $timeFilter,
               showSettingsOverlay: $showSettingsOverlay
             })
           }
-          .tabBar(this.TabBuilder(2, '我', $r('app.media.ic_user')))
+          .tabBar(this.TabBuilder(3, '我', $r('app.media.ic_user')))
         }
         .width('100%')
         .height('100%')

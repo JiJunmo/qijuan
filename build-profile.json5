@@ -28,13 +28,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001B5BF3F81BDB5556428BA8DF3E93559A96F5171675406B55D582E4BA8350D2BFE4C0D33BB638B9CA",
-          "profile": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.p7b",
+          "storeFile": "/Users/jixiaokui/Documents/projects/MyProjectInGithub/myBookStore-main/signature/qingjian.p12",
+          "storePassword": "0000001ED6FAE5C3CF2B10C845344F6B548AD0F56C2F85931F51557CF6A4518460D07598BCE8D9C76FDEEA16DA8A",
+          "keyAlias": "qingjian",
+          "keyPassword": "0000001E6732CA62B11F7EB6267B815DF07C6043C6E1B511BC516E5C55A0D93550969D42C86A4FE91A490699D15D",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/jixiaokui/.ohos/config/default_myBookStore-main_VQ_8q5u0E4U1hzwd1aOW42mFVx1mVuv7Ez-GoIZf48Y=.p12",
-          "storePassword": "0000001B08F6EEF661D08460D80EC56CD0D11F302BDE3E3A355A4C0D37F5FF678945B93F296E5275958CD1"
+          "profile": "/Users/jixiaokui/Documents/projects/MyProjectInGithub/myBookStore-main/signature/qijuanRelease.p7b",
+          "certpath": "/Users/jixiaokui/Documents/projects/MyProjectInGithub/myBookStore-main/signature/qijuan.cer"
         }
       }
     ]

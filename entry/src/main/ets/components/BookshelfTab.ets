@@ -90,6 +90,20 @@ export struct BookshelfTab {
           .fontColor($r('app.color.text_secondary'))
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .margin({ bottom: 8 })
+
+        Row() {
+          Progress({ value: item.currentPage || 0, total: item.pages || 1, type: ProgressType.Linear })
+            .color($r('app.color.primary'))
+            .backgroundColor('#EBEBEB')
+            .layoutWeight(1)
+            .margin({ right: 6 })
+          Text(`${Math.floor(((item.currentPage || 0) / (item.pages || 1)) * 100)}%`)
+            .fontSize(10)
+            .fontColor($r('app.color.text_secondary'))
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
       }
       .width('100%')
       .padding(10)
@@ -201,7 +215,7 @@ export struct BookshelfTab {
             GridItem() {
               this.BookCardBuilder(item)
             }
-          }, (item: BookItem) => item.id + '_' + item.status + '_' + item.category)
+          }, (item: BookItem) => item.id + '_' + item.status + '_' + item.category + '_' + (item.currentPage || 0))
         }
         .columnsTemplate('1fr 1fr')
         .columnsGap(14)

@@ -84,6 +84,11 @@ struct BookDetail {
     return this.globalNotes.filter(n => n.bookId === this.bookId);
   }
 
+  getCurrentPage(): number {
+    let book = this.globalBooks.find(b => b.id === this.bookId);
+    return book ? (book.currentPage || 0) : 0;
+  }
+
   // Update book status interactively
   updateStatus(newStatus: 'unread' | 'reading' | 'read') {
     this.status = newStatus;
@@ -197,6 +202,18 @@ struct BookDetail {
           .fillColor($r('app.color.text_primary'))
           .bindMenu([
             {
+              value: '阅读记录',
+              action: () => {
+                router.pushUrl({
+                  url: 'pages/ReadingHistory',
+                  params: {
+                    bookId: this.bookId,
+                    bookTitle: this.title
+                  }
+                });
+              }
+            },
+            {
               value: '修改分类',
               action: () => {
                 this.showCategoryPicker();
@@ -261,6 +278,26 @@ struct BookDetail {
           .borderRadius(16)
           .margin({ bottom: 16 })
 
+          // Immersive Reading Button
+          Button('进入沉浸式阅读')
+            .width('100%')
+            .height(50)
+            .backgroundColor($r('app.color.primary'))
+            .fontColor('#FFFFFF')
+            .fontSize(16)
+            .fontWeight(FontWeight.Bold)
+            .borderRadius(25)
+            .margin({ bottom: 16 })
+            .onClick(() => {
+              router.pushUrl({
+                url: 'pages/ImmersiveReading',
+                params: {
+                  bookId: this.bookId,
+                  bookTitle: this.title
+                }
+              });
+            })
+
           // Book Meta Information Section
           Column() {
             Text('书籍信息')
@@ -269,6 +306,7 @@ struct BookDetail {
               .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 12 })
 
+            MetaItem({ label: '阅读进度', value: `${this.getCurrentPage()} / ${this.pages} 页` })
             MetaItem({ label: '图书分类', value: this.category })
             MetaItem({ label: '出版社', value: this.publisher })
             MetaItem({ label: '出版日期', value: this.publishDate })

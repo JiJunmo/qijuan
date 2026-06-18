@@ -249,7 +249,7 @@ export struct ScanTab {
       let httpRequest = http.createHttp();
       let baseUrl = this.customApiUrl.trim();
       if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-        baseUrl = 'http://' + baseUrl;
+        baseUrl = 'https://' + baseUrl;
       }
       let fullUrl = '';
       if (baseUrl.includes('isbn=')) {
@@ -282,6 +282,13 @@ export struct ScanTab {
           if (!err && data.responseCode === 200) {
             try {
               const resObj = JSON.parse(data.result as string) as Record<string, Object>;
+              
+              if (resObj.error) {
+                reject(resObj.error);
+                httpRequest.destroy();
+                return;
+              }
+
               const remoteCover = (resObj.cover as string) || '';
               this.downloadCover(isbn, remoteCover).then((localCover) => {
                 const book = new BookItem(
@@ -294,23 +301,28 @@ export struct ScanTab {
                   (resObj.summary as string) || '暂无内容简介。',
                   (resObj.publisher as string) || '未知出版社',
                   (resObj.pubdate as string) || '--',
-                  parseInt(resObj.pages as string) || (resObj.pages as number) || 0,
+                  Number(resObj.pages) || 0,
                   isbn,
                   '自建服务器'
                 );
                 resolve(book);
-              }).catch(() => {
-                resolve(null);
+              }).catch((err: Error) => {
+                let msg = '构造 BookItem 或处理封面时发生错误: ' + JSON.stringify(err.message || err);
+                console.error(msg);
+                reject(msg);
               });
               httpRequest.destroy();
               return;
             } catch (e) {
-              console.error('自建服务器 JSON 解析报错: ' + JSON.stringify(e));
+              let msg = '自建服务器 JSON 解析报错: ' + JSON.stringify(e);
+              console.error(msg);
+              reject(msg);
             }
           } else {
-            console.error('自建服务器请求失败，状态码: ' + (data ? data.responseCode : 'none') + ', 错误: ' + JSON.stringify(err));
+            let errorDetail = data && data.result ? (typeof data.result === 'string' ? data.result : JSON.stringify(data.result)) : JSON.stringify(err);
+            console.error(`自建服务器请求失败，状态码: ${data ? data.responseCode : 'none'}，具体报错: ${errorDetail}`);
+            reject(`请求失败(状态码: ${data ? data.responseCode : 'none'}): ${errorDetail}`);
           }
-          resolve(null);
           httpRequest.destroy();
         }
       );
@@ -329,10 +341,16 @@ export struct ScanTab {
     // Custom Server API (if configured)
     if (this.customApiUrl) {
       promptAction.showToast({ message: '正在查询...' });
-      const book = await this.queryCustomServer(isbn);
-      if (book) {
-        this.pendingBook = book;
-        this.showConfirmDialog = true;
+      try {
+        const book = await this.queryCustomServer(isbn);
+        if (book) {
+          this.pendingBook = book;
+          this.showConfirmDialog = true;
+          this.isSearching = false;
+          return;
+        }
+      } catch (err: any) {
+        promptAction.showToast({ message: '网络请求报错: ' + (err.message || JSON.stringify(err)), duration: 4000 });
         this.isSearching = false;
         return;
       }
@@ -730,7 +748,7 @@ export struct ScanTab {
               .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 16 })
             
-            Text('未查询到相关书籍信息。本应用目前处于内测邀请阶段，如需使用云端扫码录入功能，请通过设置页面联系开发者邮箱获取专属邀请码，配置后即可直接获取图书信息。')
+            Text('未查询到相关书籍信息。请到设置中输入邀请码。')
               .fontSize(13)
               .fontColor($r('app.color.text_secondary'))
               .lineHeight(18)
