@@ -11,3 +11,9 @@
 **/.test
 /.appanalyzer
 /server/
+
+# Signature
+/signature/*.cer
+/signature/*.p7b
+/signature/*.p12
+/signature/*.csr
