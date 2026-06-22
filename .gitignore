@@ -1,0 +1,14 @@
+# OS files
+.DS_Store
+
+# Signature / Certificates
+/signature/
+
+# Xcode
+build/
+DerivedData/
+*.xcuserdata
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
